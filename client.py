@@ -16,6 +16,7 @@ PORT = 3000 #set port number
 DEVICE_NAME = 'DEV001' #set device name
 CONNECTION_QUERY = f'http://{str(HOST)}:{str(PORT)}' #connection string
 
+# Starting conditions
 global newTemp, emgFlag, maxLevel, levelStr, startStatus, stopStatus
 newTemp = 10
 emgFlag = False
@@ -53,8 +54,8 @@ def startBtnPressed():
                 stopStatus = False
                 led1.on()
                 checkTemp()
-                # output1.off() # realay module is operating in reverse mode 0 --> true / 1 --> false
-                output2.off() # realay module is operating in reverse mode 0 --> true / 1 --> false
+                # output1.off() # relay module is operating in reverse mode 0 --> true / 1 --> false
+                output2.off() # relay module is operating in reverse mode 0 --> true / 1 --> false
 
                 # All data are saved to a json file locally. The name of the file is genareted from date and time
                 # print(time.strftime('%Y%j%H%M%S'))
@@ -90,8 +91,8 @@ def stopBtnPressed():
         startStatus = False
         stopStatus = True
         led1.off()
-        output1.on() # realy module is operating in reverse mode 0 --> true / 1 --> false
-        output2.on() # realy module is operating in reverse mode 0 --> true / 1 --> false
+        output1.on() # relay module is operating in reverse mode 0 --> true / 1 --> false
+        output2.on() # relay module is operating in reverse mode 0 --> true / 1 --> false
         # TO-DO add other activities to stop
         theData = {
             'action': 'Stop Button',
@@ -229,7 +230,7 @@ def connect():
 
 # send data to server
 def sendMeasures(theData):
-    if connection!=0:
+    if connection != 0:
         try:
             mysocket.emit('measures', theData)
             print(f'Sending ----> {theData}')
@@ -252,6 +253,7 @@ def sendMeasures(theData):
         print(f'Error sending ----> {theData}')
         printData()
 
+
 @mysocket.on('connected')
 def handle_json(data):
     print(f'Server response : {data}')
@@ -259,11 +261,16 @@ def handle_json(data):
 @mysocket.on('start')
 def startDistil():
     led1.on()
+    # TO-DO: Add all the actions
     
 @mysocket.on('stop')
-def startDistil():
+def stopDistil():
     led1.off()
-    
+    # TO-DO: Add all the actions
+
+# Add Emergency Button web-socket endpoint
+# Add Reset Button web-socket endpoint
+
 def measure():
     global tempA, tempB, resA, resB, now, theData, cpu, s, startStatus
     led2.on()
@@ -333,7 +340,7 @@ def checkTemp():
         output1.on()
 
 # Set the thread
-def setThr():
+def setThread():
     readSensors = threading.Thread(target=measure)
     readSensors.start()
 
@@ -346,7 +353,7 @@ levelMax()
 measure()
 
 # Schedule thread
-schedule.every(0.5).seconds.do(setThr) 
+schedule.every(0.5).seconds.do(setThread) 
 
 try:
     while True:
