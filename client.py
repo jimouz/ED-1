@@ -17,13 +17,14 @@ DEVICE_NAME = 'DEV001' #set device name
 CONNECTION_QUERY = f'http://{str(HOST)}:{str(PORT)}' #connection string
 
 # Starting conditions
-global newTemp, emgFlag, maxLevel, levelStr, startStatus, stopStatus
+global newTemp, emgFlag, maxLevel, levelStr, startStatus, stopStatus, menuFlag, menuOptions
+levelStr = 'OK'
 newTemp = 10
+menuOptions = 0
 emgFlag = False
+menuFlag = False
 startStatus = False
 stopStatus = True
-levelStr = 'OK'
-
 mysocket = socketio.Client()
 lcd = i2c_lcd.lcd(39) 
 spi = board.SPI()
@@ -45,11 +46,11 @@ output2 = gpiozero.DigitalOutputDevice(19, initial_value=True) # relay module is
 # START BUTTON
 def startBtnPressed():
     global startStatus, dataFileName, stopStatus
-    if stopButton.is_pressed == True:
+    if stopButton.is_pressed is True:
         return 0
     else:
-        if emgFlag == False:
-            if led1.is_active == False:
+        if emgFlag is False:
+            if led1.is_active is False:
                 startStatus = True
                 stopStatus = False
                 led1.on()
@@ -87,7 +88,7 @@ startButton.when_pressed = startBtnPressed
 # STOP BUTTON
 def stopBtnPressed():
     global startStatus, stopStatus, emgFlag
-    if stopStatus == False:
+    if stopStatus is False:
         startStatus = False
         stopStatus = True
         led1.off()
@@ -115,10 +116,11 @@ def stopBtnPressed():
     print(f'____________________Stop Button pressed! {led1.is_active}')
 
 def resetDevice():
-    global newTemp, emgFlag
-    if emgFlag == True: # check if emergency button is pressed, to perform error reset
+    global newTemp, emgFlag, menuFlag
+    if emgFlag is True: # check if emergency button is pressed, to perform error reset
         newTemp = 10
         emgFlag = False
+        menuFlag = False
         led5.blink(on_time=0.5, off_time=0.5, n = 4)
 
 stopButton = gpiozero.Button(16)
@@ -128,18 +130,32 @@ stopButton.when_held = resetDevice
 # ----------------------------------------------------------
 # rotary encoder RIGHT
 def rotaryRight():
-    global newTemp
-    newTemp = newTemp + 1
-    print(f'__________________________Rotary Right! New Temp : {newTemp}')
+    global newTemp, menuOptions
+    if menuFlag is False:
+        newTemp = newTemp + 1
+        print(f'__________________________Rotary Right! New Temp : {newTemp}')
+    elif menuFlag is True:
+        if menuOptions >= 2:
+            menuOptions = 2
+        else:
+            menuOptions = menuOptions + 1
+        print(f'__________________________Rotary Left! New Option : {menuOptions}')
 
 # rotary encoder LEFT
 def rotaryLeft():
-    global newTemp
-    if newTemp <= 0:
-        newTemp = 0
-    else:
-        newTemp = newTemp - 1
-    print(f'__________________________Rotary Left! New Temp : {newTemp}')
+    global newTemp, menuOptions
+    if menuFlag is False:
+        if newTemp <= 0:
+            newTemp = 0
+        else:
+            newTemp = newTemp - 1
+        print(f'__________________________Rotary Left! New Temp : {newTemp}')
+    elif menuFlag is True:
+        if menuOptions <= 0:
+            menuOptions = 0
+        else:
+            menuOptions = menuOptions - 1
+        print(f'__________________________Rotary Left! New Option : {menuOptions}')
     
 rotary = RotaryEncoder(20, 21)
 rotary.when_rotated_clockwise = rotaryRight
@@ -148,7 +164,23 @@ rotary.when_rotated_counter_clockwise = rotaryLeft
 # ----------------------------------------------------------
 # rotary encoder push button
 def rotaryPressed():
-    print(f'__________________________Rotary pressed!')
+    global menuFlag, menuOptions
+    if menuOptions == 0:
+        if connection is None:
+                connect()
+        menuFlag = False
+        lcd.lcd_clear()
+        print(f'__________________________Rotary pressed! Selected :{menuOptions} - Connect')
+    if menuOptions == 1:
+        # TO-DO
+        menuFlag = False
+        lcd.lcd_clear()
+        print(f'__________________________Rotary pressed! Selected :{menuOptions} - Shutdown')
+        print(f'__________________________SHUTDOWN INACTIVE!')
+    if menuOptions == 2:
+        menuFlag = False
+        lcd.lcd_clear()
+        print(f'__________________________Rotary pressed! Selected :{menuOptions} - Exit')
 
 rotarySW = gpiozero.Button(26)
 rotarySW.when_pressed = rotaryPressed
@@ -167,23 +199,24 @@ emgButton.when_pressed = emgPressed
 
 # ----------------------------------------------------------
 # TO-DO: Change to MENU button
-# Connect button
-def connectPressed():
-    if connection is None:
-        connect()
+# Menu button
+def menuPressed():
+    global menuFlag
+    menuFlag = True
+    lcd.lcd_clear()
 
-connectBtn = gpiozero.Button(6, bounce_time = 0.1)
-connectBtn.when_pressed = connectPressed
+menuBtn = gpiozero.Button(6, bounce_time = 0.1)
+menuBtn.when_pressed = menuPressed
 
 # ----------------------------------------------------------
 # Level sensor
 def levelMax():
     global maxLevel, levelStr
-    if levelSensor.is_active == True:
+    if levelSensor.is_active is True:
         led3.blink(on_time=0.5, off_time=0.5)
         maxLevel = True
         levelStr = 'MAX'
-    elif levelSensor.is_active == False:
+    elif levelSensor.is_active is False:
         led3.off()
         maxLevel = False
         levelStr = 'OK'
@@ -292,7 +325,7 @@ def measure():
             'tankLevel': maxLevel
             }
     theData = json.dumps(theData)
-    if startStatus == True:
+    if startStatus is True:
         s = f' < ON   >'
     else:
         s = f' < OFF  >'
@@ -307,13 +340,22 @@ def sendData():
     led4.off()
 
 def printDataLCD():
-    lcd.lcd_display_string_pos(f'{s}', 1, 11)
-    lcd.lcd_display_string_pos(f'A : {tempA} C {resA}', 2, 0)
-    lcd.lcd_display_string_pos(f'B : {tempB} C {resB}', 3, 0)
-    try:
-        lcd.lcd_display_string(f'User Temp : {newTemp} ', 4)
-    except:
-        lcd.lcd_display_string(f'User Temp : {newTemp}', 4)
+    if menuFlag is False:
+        lcd.lcd_display_string_pos(f'{s}', 1, 11)
+        lcd.lcd_display_string_pos(f'A : {tempA} C {resA}', 2, 0)
+        lcd.lcd_display_string_pos(f'B : {tempB} C {resB}', 3, 0)
+        try:
+            lcd.lcd_display_string(f'User Temp : {newTemp} ', 4)
+        except:
+            lcd.lcd_display_string(f'User Temp : {newTemp}', 4)
+    elif menuFlag is True:
+         lcd.lcd_display_string_pos(f'MENU', 2, 0)
+         if menuOptions == 0:
+             lcd.lcd_display_string_pos(f'Connect ', 3, 0)
+         elif menuOptions == 1:
+             lcd.lcd_display_string_pos(f'Shutdown', 3, 0)
+         elif menuOptions == 2:
+             lcd.lcd_display_string_pos(f'Exit    ', 3, 0)
 
 
 def printTimeLCD():
