@@ -166,6 +166,7 @@ emgButton = gpiozero.Button(12, bounce_time = 0.1)
 emgButton.when_pressed = emgPressed
 
 # ----------------------------------------------------------
+# TO-DO: Change to MENU button
 # Connect button
 def connectPressed():
     if connection is None:
@@ -346,7 +347,6 @@ def setThread():
 
 lcd.lcd_display_string_pos(f'Loading...', 1, 0)
 lcd.lcd_display_string_pos(f'Connecting...', 2, 0)
-
 connect()
 lcd.lcd_clear()
 levelMax()
