@@ -157,7 +157,7 @@ def rotaryLeft():
             menuOptions = menuOptions - 1
         print(f'__________________________Rotary Left! New Option : {menuOptions}')
     
-rotary = RotaryEncoder(20, 21)
+rotary = RotaryEncoder(20, 21, bounce_time = 0.1)
 rotary.when_rotated_clockwise = rotaryRight
 rotary.when_rotated_counter_clockwise = rotaryLeft
 
@@ -165,31 +165,35 @@ rotary.when_rotated_counter_clockwise = rotaryLeft
 # rotary encoder push button
 def rotaryPressed():
     global menuFlag, menuOptions
-    if menuOptions == 0:
-        if connection is None:
-                connect()
-        menuFlag = False
-        lcd.lcd_clear()
-        print(f'__________________________Rotary pressed! Selected :{menuOptions} - Connect')
-    if menuOptions == 1:
-        # TO-DO
-        menuFlag = False
-        lcd.lcd_clear()
-        print(f'__________________________Rotary pressed! Selected :{menuOptions} - Shutdown')
-        print(f'__________________________SHUTDOWN INACTIVE!')
-    if menuOptions == 2:
-        menuFlag = False
-        lcd.lcd_clear()
-        print(f'__________________________Rotary pressed! Selected :{menuOptions} - Exit')
+    if menuFlag is True:
+        if menuOptions == 0:
+            if connection is None:
+                    connect()
+            menuFlag = False
+            lcd.lcd_clear()
+            print(f'__________________________Rotary pressed! Selected :{menuOptions} - Connect')
+        if menuOptions == 1:
+            # TO-DO
+            menuFlag = False
+            lcd.lcd_clear()
+            print(f'__________________________Rotary pressed! Selected :{menuOptions} - Shutdown')
+            print(f'__________________________SHUTDOWN INACTIVE!')
+        if menuOptions == 2:
+            menuFlag = False
+            lcd.lcd_clear()
+            print(f'__________________________Rotary pressed! Selected :{menuOptions} - Exit')
+    else:
+        return 0
 
-rotarySW = gpiozero.Button(26)
+rotarySW = gpiozero.Button(26, bounce_time = 0.1)
 rotarySW.when_pressed = rotaryPressed
 
 # ----------------------------------------------------------
 # EMERGENCY button
 def emgPressed():
-    global emgFlag
+    global emgFlag, menuFlag
     emgFlag = True
+    menuFlag = False
     led5.blink(on_time=1, off_time=1)
     stopBtnPressed()
     print(f'__________________________Emergency Button pressed!')
@@ -330,8 +334,8 @@ def measure():
     else:
         s = f' < OFF  >'
     printData()
-    printTimeLCD()
     printDataLCD()
+    printTimeLCD()
     sendData()
 
 def sendData():
@@ -382,8 +386,8 @@ def checkTemp():
     elif (float(tempA) - 0.5 ) >= newTemp and led1.is_active == True:
         output1.on()
 
-# Set the thread
-def setThread():
+# Set a thread to read the sensors
+def readSensorsThread():
     readSensors = threading.Thread(target=measure)
     readSensors.start()
 
@@ -395,7 +399,7 @@ levelMax()
 measure()
 
 # Schedule thread
-schedule.every(0.5).seconds.do(setThread) 
+schedule.every(0.5).seconds.do(readSensorsThread) 
 
 try:
     while True:
@@ -403,4 +407,4 @@ try:
         schedule.run_pending()
         time.sleep(1)
 except KeyboardInterrupt:
-    print('Exiting...')
+    print('Exiting operation...')
