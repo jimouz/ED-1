@@ -17,7 +17,8 @@ DEVICE_NAME = 'DEV001' #set device name
 CONNECTION_QUERY = f'http://{str(HOST)}:{str(PORT)}' #connection string
 
 # Starting conditions
-global newTemp, emgFlag, maxLevel, levelStr, startStatus, stopStatus, menuFlag, menuOptions
+global newTemp, emgFlag, maxLevel, levelStr, startStatus, stopStatus, menuFlag, menuOptions, bounceTime
+bounceTime = 0.1
 levelStr = 'OK'
 newTemp = 10
 menuOptions = 0
@@ -83,7 +84,7 @@ def startBtnPressed():
 
     print(f'____________________Start Button pressed! {led1.is_active}')
 
-startButton = gpiozero.Button(27, bounce_time = 0.1)
+startButton = gpiozero.Button(27, bounce_time = bounceTime)
 startButton.when_pressed = startBtnPressed
 
 # ----------------------------------------------------------
@@ -125,7 +126,7 @@ def resetDevice():
         menuFlag = False
         led5.blink(on_time=0.5, off_time=0.5, n = 4)
 
-stopButton = gpiozero.Button(16)
+stopButton = gpiozero.Button(16, bounce_time = bounceTime)
 stopButton.when_pressed = stopBtnPressed
 stopButton.hold_time = 2 # Hold stop button for 2 seconds to perform error reset
 stopButton.when_held = resetDevice
@@ -159,7 +160,7 @@ def rotaryLeft():
             menuOptions = menuOptions - 1
         print(f'__________________________Rotary Left! New Option : {menuOptions}')
     
-rotary = RotaryEncoder(20, 21, bounce_time = 0.1)
+rotary = RotaryEncoder(20, 21, bounce_time = bounceTime)
 rotary.when_rotated_clockwise = rotaryRight
 rotary.when_rotated_counter_clockwise = rotaryLeft
 
@@ -187,7 +188,7 @@ def rotaryPressed():
     else:
         return 0
 
-rotarySW = gpiozero.Button(26, bounce_time = 0.1)
+rotarySW = gpiozero.Button(26, bounce_time = bounceTime)
 rotarySW.when_pressed = rotaryPressed
 
 # ----------------------------------------------------------
@@ -200,7 +201,7 @@ def emgPressed():
     stopBtnPressed()
     print(f'__________________________Emergency Button pressed!')
 
-emgButton = gpiozero.Button(12, bounce_time = 0.1)
+emgButton = gpiozero.Button(12, bounce_time = bounceTime)
 emgButton.when_pressed = emgPressed
 
 # ----------------------------------------------------------
@@ -211,7 +212,7 @@ def menuPressed():
     menuFlag = True
     lcd.clear()
 
-menuBtn = gpiozero.Button(6, bounce_time = 0.1)
+menuBtn = gpiozero.Button(6, bounce_time = bounceTime)
 menuBtn.when_pressed = menuPressed
 
 # ----------------------------------------------------------
@@ -337,7 +338,7 @@ def measure():
         s = f' < OFF  >'
     printData()
     printDataLCD()
-    printTimeLCD()
+    printTimeLCDThread()
     sendData()
 
 def sendData():
@@ -402,6 +403,10 @@ def checkTemp():
 def readSensorsThread():
     readSensors = threading.Thread(target=measure)
     readSensors.start()
+
+def printTimeLCDThread():
+    displayTime = threading.Thread(target=printTimeLCD)
+    displayTime.start()
 
 lcd.cursor_pos = (1,0)
 lcd.write_string(f'Loading...')
