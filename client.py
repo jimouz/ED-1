@@ -4,7 +4,7 @@ import json #import json methods
 import os
 import digitalio #import gpio methods
 import board #import SPI
-import i2c_lcd
+from RPLCD.i2c import CharLCD
 import adafruit_max31865 #import MAX31865 methods
 import threading
 import schedule
@@ -26,7 +26,9 @@ menuFlag = False
 startStatus = False
 stopStatus = True
 mysocket = socketio.Client()
-lcd = i2c_lcd.lcd() 
+lcd = CharLCD(i2c_expander='PCF8574', address=0x27, port=1, 
+              cols=20, rows=4, dotsize=10, auto_linebreaks=False,
+              backlight_enabled=True)
 spi = board.SPI()
 
 # set led output pin 1 On/Off indicator
@@ -170,17 +172,17 @@ def rotaryPressed():
             if connection is None:
                     connect()
             menuFlag = False
-            lcd.lcd_clear()
+            lcd.clear()
             print(f'__________________________Rotary pressed! Selected :{menuOptions} - Connect')
         if menuOptions == 1:
             # TO-DO
             menuFlag = False
-            lcd.lcd_clear()
+            lcd.clear()
             print(f'__________________________Rotary pressed! Selected :{menuOptions} - Shutdown')
             print(f'__________________________SHUTDOWN INACTIVE!')
         if menuOptions == 2:
             menuFlag = False
-            lcd.lcd_clear()
+            lcd.clear()
             print(f'__________________________Rotary pressed! Selected :{menuOptions} - Exit')
     else:
         return 0
@@ -207,7 +209,7 @@ emgButton.when_pressed = emgPressed
 def menuPressed():
     global menuFlag
     menuFlag = True
-    lcd.lcd_clear()
+    lcd.clear()
 
 menuBtn = gpiozero.Button(6, bounce_time = 0.1)
 menuBtn.when_pressed = menuPressed
@@ -345,24 +347,33 @@ def sendData():
 
 def printDataLCD():
     if menuFlag is False:
-        lcd.lcd_display_string_pos(f'{s}', 1, 11)
-        lcd.lcd_display_string_pos(f'A : {tempA} C {resA}', 2, 0)
-        lcd.lcd_display_string_pos(f'B : {tempB} C {resB}', 3, 0)
+        lcd.cursor_pos = (0, 11)
+        lcd.write_string(f'{s}')
+        lcd.cursor_pos = (1, 0)
+        lcd.write_string(f'A : {tempA} C {resA}')
+        lcd.cursor_pos = (2, 0)
+        lcd.write_string(f'B : {tempB} C {resB}')
+        lcd.cursor_pos = (3, 0)
         try:
-            lcd.lcd_display_string(f'User Temp : {newTemp} ', 4)
+            lcd.write_string(f'User Temp : {newTemp} ')
         except:
-            lcd.lcd_display_string(f'User Temp : {newTemp}', 4)
+            lcd.write_string(f'User Temp : {newTemp}')
     elif menuFlag is True:
-         lcd.lcd_display_string_pos(f'MENU', 2, 0)
+         lcd.cursor_pos = (1, 0)
+         lcd.write_string(f'MENU')
          if menuOptions == 0:
-             lcd.lcd_display_string_pos(f'Connect ', 3, 0)
+             lcd.cursor_pos = (2, 0)
+             lcd.write_string(f'Connect ')
          elif menuOptions == 1:
-             lcd.lcd_display_string_pos(f'Shutdown', 3, 0)
+             lcd.cursor_pos = (2, 0)
+             lcd.write_string(f'Shutdown')
          elif menuOptions == 2:
-             lcd.lcd_display_string_pos(f'Exit    ', 3, 0)
+             lcd.cursor_pos = (2, 0)
+             lcd.write_string(f'Exit    ')
 
 def printTimeLCD():
-    lcd.lcd_display_string_pos(f'{time.strftime("%H:%M:%S")}', 1, 0)
+    lcd.cursor_pos = (0, 0)
+    lcd.write_string(f'{time.strftime("%H:%M:%S")}')
 
 # Print data to terminal
 def printData():
@@ -392,10 +403,12 @@ def readSensorsThread():
     readSensors = threading.Thread(target=measure)
     readSensors.start()
 
-lcd.lcd_display_string_pos(f'Loading...', 1, 0)
-lcd.lcd_display_string_pos(f'Connecting...', 2, 0)
+lcd.cursor_pos = (1,0)
+lcd.write_string(f'Loading...')
+lcd.cursor_pos = (2,0)
+lcd.write_string(f'Connecting...')
 connect()
-lcd.lcd_clear()
+lcd.clear()
 levelMax()
 measure()
 
