@@ -26,7 +26,7 @@ menuFlag = False
 startStatus = False
 stopStatus = True
 mysocket = socketio.Client()
-lcd = i2c_lcd.lcd(39) 
+lcd = i2c_lcd.lcd() 
 spi = board.SPI()
 
 # set led output pin 1 On/Off indicator
@@ -361,10 +361,10 @@ def printDataLCD():
          elif menuOptions == 2:
              lcd.lcd_display_string_pos(f'Exit    ', 3, 0)
 
-
 def printTimeLCD():
     lcd.lcd_display_string_pos(f'{time.strftime("%H:%M:%S")}', 1, 0)
 
+# Print data to terminal
 def printData():
     print('--------------------------')
     print(f'Last measure  : {now}')
@@ -380,6 +380,7 @@ def printData():
         print(f'Threshhold    : Reading... °C')
     print('\n')
 
+# Check temperature
 def checkTemp():
     if (float(tempA) + 0.5 ) <= newTemp and led1.is_active == True:
         output1.off()
@@ -398,8 +399,8 @@ lcd.lcd_clear()
 levelMax()
 measure()
 
-# Schedule thread
-schedule.every(0.5).seconds.do(readSensorsThread) 
+# Schedule the thread
+schedule.every(0.5).seconds.do(readSensorsThread)
 
 try:
     while True:
