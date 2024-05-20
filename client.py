@@ -30,6 +30,7 @@ mysocket = socketio.Client()
 lcd = CharLCD(i2c_expander='PCF8574', address=0x27, port=1, 
               cols=20, rows=4, dotsize=10, auto_linebreaks=False,
               backlight_enabled=True)
+lcd.cursor_mode = 'hide'
 spi = board.SPI()
 
 # set led output pin 1 On/Off indicator
@@ -43,8 +44,10 @@ led4 = LED(23)
 # set led output pin 5 Emergency/Error Indicator
 led5 = LED(18)
 
-output1 = gpiozero.DigitalOutputDevice(13, initial_value=True) # relay module is operating in reverse mode 0 --> true / 1 --> false
-output2 = gpiozero.DigitalOutputDevice(19, initial_value=True) # relay module is operating in reverse mode 0 --> true / 1 --> false
+# relay module is operating in reverse mode 0 --> true / 1 --> false
+output1 = gpiozero.DigitalOutputDevice(13, initial_value=True)
+# relay module is operating in reverse mode 0 --> true / 1 --> false
+output2 = gpiozero.DigitalOutputDevice(19, initial_value=True)
 # ----------------------------------------------------------
 # START BUTTON
 def startBtnPressed():
@@ -301,12 +304,12 @@ def handle_json(data):
 
 @mysocket.on('start')
 def startDistil():
-    led1.on()
+    startBtnPressed()
     # TO-DO: Add all the actions
     
 @mysocket.on('stop')
 def stopDistil():
-    led1.off()
+    stopBtnPressed()
     # TO-DO: Add all the actions
 
 # Add Emergency Button web-socket endpoint
@@ -404,6 +407,7 @@ def readSensorsThread():
     readSensors = threading.Thread(target=measure)
     readSensors.start()
 
+# Set a thread to display time to LCD
 def printTimeLCDThread():
     displayTime = threading.Thread(target=printTimeLCD)
     displayTime.start()
