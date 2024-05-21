@@ -124,6 +124,7 @@ def stopBtnPressed():
 def resetDevice():
     global newTemp, emgFlag, menuFlag
     if emgFlag is True: # check if emergency button is pressed, to perform error reset
+        lcd.clear()
         newTemp = 10
         emgFlag = False
         menuFlag = False
