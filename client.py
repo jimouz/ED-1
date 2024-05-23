@@ -174,8 +174,8 @@ def rotaryPressed():
     global menuFlag, menuOptions
     if menuFlag is True:
         if menuOptions == 0:
-            if connection is None:
-                    connect()
+            if connection == '0':
+                    connectThread()
             menuFlag = False
             lcd.clear()
             print(f'__________________________Rotary pressed! Selected :{menuOptions} - Connect')
@@ -267,7 +267,7 @@ def connect():
         print(CONNECTION_QUERY)
     except:
         print(f'Connection Error.')
-        connection = 0
+        connection = '0'
         return connection
     else:
         print(f'Connected to server {str(HOST)}:{str(PORT)}')
@@ -412,6 +412,11 @@ def readSensorsThread():
 def printTimeLCDThread():
     displayTime = threading.Thread(target=printTimeLCD)
     displayTime.start()
+
+# Set a thread to manually connect to server
+def connectThread():
+    connectThr = threading.Thread(target=connect)
+    connectThr.start()
 
 lcd.cursor_pos = (1,0)
 lcd.write_string(f'Loading...')
