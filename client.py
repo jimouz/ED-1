@@ -312,7 +312,13 @@ def startDistil():
 def stopDistil():
     stopBtnPressed()
     # TO-DO: Add all the actions
-
+    
+# Add user temperature change value from slider
+@mysocket.on('sliderChange')
+def setUserTemp(data):
+    global newTemp
+    print(f'---------- Slider Change Function!!!! {data}')
+    newTemp = int(data)
 # Add Emergency Button web-socket endpoint
 # Add Reset Button web-socket endpoint
 
